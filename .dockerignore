@@ -3,3 +3,5 @@ docker-compose.yml
 .dockerignore
 .git
 .gitignore
+node_modules/
+.devcontainer/
