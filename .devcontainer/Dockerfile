@@ -5,7 +5,7 @@ ARG MONGO_TOOLS_VERSION=4.2
 RUN curl -sSL "https://www.mongodb.org/static/pgp/server-${MONGO_TOOLS_VERSION}.asc" | (OUT=$(apt-key add - 2>&1) || echo $OUT) \
     && echo "deb http://repo.mongodb.org/apt/debian $(lsb_release -cs)/mongodb-org/${MONGO_TOOLS_VERSION} main" | sudo tee /etc/apt/sources.list.d/mongodb-org-${MONGO_TOOLS_VERSION}.list \
     && sudo apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && sudo apt-get install -y mongodb-org-tools mongodb-org-shell \
+    && sudo apt-get install -y --allow-unauthenticated mongodb-org-tools mongodb-org-shell \
     && sudo apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Update args in docker-compose.yaml to set the UID/GID of the "node" user.
