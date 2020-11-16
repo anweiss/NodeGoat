@@ -7,7 +7,7 @@
 // NODE_ENV=production node artifacts/db-reset.js
 
 const { MongoClient } = require("mongodb");
-const { db } = require("../config/config");
+const { db, dbName } = require("../config/config");
 
 const USERS_TO_INSERT = [
     {
@@ -51,7 +51,7 @@ const parseResponse = (err, res, comm) => {
     if (err) {
         console.log("ERROR:");
         console.log(comm);
-        console.log(JSON.stringify(err));
+        console.log(err);
         process.exit(1);
     }
     console.log(comm);
@@ -60,10 +60,10 @@ const parseResponse = (err, res, comm) => {
 
 
 // Starting here
-MongoClient.connect(db, (err, db) =>  {
+MongoClient.connect(db, (err, client) => {
     if (err) {
         console.log("ERROR: connect");
-        console.log(JSON.stringify(err));
+        console.log(err);
         process.exit(1);
     }
     console.log("Connected to the database");
@@ -78,20 +78,21 @@ MongoClient.connect(db, (err, db) =>  {
 
     // remove existing data (if any), we don't want to look for errors here
     console.log("Dropping existing collections");
-    const dropPromises = collectionNames.map((name) => tryDropCollection(db, name));
+    var clientDb = client.db(dbName);
+    const dropPromises = collectionNames.map((name) => tryDropCollection(clientDb, name));
 
     // Wait for all drops to finish (or fail) before continuing
     Promise.all(dropPromises).then(() => {
-        const usersCol = db.collection("users");
-        const allocationsCol = db.collection("allocations");
-        const countersCol = db.collection("counters");
+        const usersCol = clientDb.collection("users");
+        const allocationsCol = clientDb.collection("allocations");
+        const countersCol = clientDb.collection("counters");
 
         // reset unique id counter
-        countersCol.insert({
+        countersCol.insertOne({
             _id: "userId",
             seq: 3
         }, (err, data) => {
-            parseResponse(err, data, "countersCol.insert");
+            parseResponse(err, data, "countersCol.insertOne");
         });
 
         // insert admin and test users
@@ -104,7 +105,7 @@ MongoClient.connect(db, (err, db) =>  {
             // We can't continue if error here
             if (err) {
                 console.log("ERROR: insertMany");
-                console.log(JSON.stringify(err));
+                console.log(err);
                 process.exit(1);
             }
             parseResponse(err, data, "users.insertMany");
